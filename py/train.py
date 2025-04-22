@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import os
 
 save_dir = 'images'
+model_dir = '../models'
 os.makedirs(save_dir, exist_ok=True)
+
 
 def load_data():
     (X_train, y_train), (X_test, y_test) = tf.keras.datasets.mnist.load_data()
@@ -23,6 +25,51 @@ def load_data():
 
     return (X_train, y_train), (X_test, y_test)
 
+def build_model():
+    model = keras.Sequential([
+        keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        keras.layers.MaxPooling2D((2, 2)),
+        keras.layers.Conv2D(64, (3, 3), activation='relu'),
+        keras.layers.MaxPooling2D((2, 2)),
+        keras.layers.Flatten(),
+        keras.layers.Dense(64, activation='relu'),
+        keras.layers.Dense(10, activation='softmax')
+    ])
+    model.summary()
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    
+    return model
+
+def train_model(model, X_train, y_train, X_test, y_test):
+    history = model.fit(X_train, y_train, epochs=5, batch_size=64, validation_data=(X_test, y_test))
+    return history, model
+    model.save('mnist_model.h5')
+
+    
+
+def plot_hisrotory(history):
+    # Plot training & validation accuracy values
+    plt.figure()
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig(save_dir + '/accuracy.png')
+
+    # Plot training & validation loss values
+    plt.figure()
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig(save_dir + '/loss.png')
+
 if __name__ == "__main__":
     (X_train, y_train), (X_test, y_test) = load_data()
 
@@ -34,3 +81,8 @@ if __name__ == "__main__":
         plt.title(f'Label: {y_train[i]}')
         plt.axis('off')
     plt.savefig(save_dir + '/training_images.png')
+    model = build_model()
+    history, model = train_model(model, X_train, y_train, X_test, y_test)
+    # Save the model
+    model.save(os.path.join(model_dir, 'mnist_model.h5'))
+    plot_hisrotory(history)
